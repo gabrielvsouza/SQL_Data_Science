@@ -4,20 +4,19 @@ Investigating universities in Switzerland
 
 A relational database:
   real-life entities become tables 
-    e.g. professors , universities
+                                    e.g. professors , universities
   reduced redundancy companies
-    e.g. only one entry in companies for the bank "Credit Suisse"
+                                    e.g. only one entry in companies for the bank "Credit Suisse"
   data integrity by relationships 
-    e.g. a professor can work at multiple universities and companies , 
-    a company can employ multiple professors
-
+                                    e.g. a professor can work at multiple universities and companies , 
+                                    a company can employ multiple professors
 Throughout this course you will:
   work with the data I used for my investigation
   create a relational database from scratch
   learn three concepts:
-    constraints
-    keys
-    referential integrity
+      constraints
+      keys
+      referential integrity
 
 
 Attributes of relational databases
@@ -36,7 +35,6 @@ Have a look at the columns of a certain table
     FROM information_schema.columns
     WHERE table_name = 'pg_config';
 
-
 Query information_schema with SELECT
 information_schema is a meta-database that holds information about your current database. information_schema has 
 multiple tables you can query with the known SELECT * FROM syntax:
@@ -46,14 +44,19 @@ multiple tables you can query with the known SELECT * FROM syntax:
 In this exercise, you'll only need information from the 'public' schema, which is specified as the column table_schema 
 of the tables and columns tables. The 'public' schema holds information about user-defined tables and databases. 
 The other types of table_schema hold system information – for this course, you're only interested in user-defined stuff.
-
-
 Get information on all table names in the current database, while limiting your query to the 'public' table_schema
     -- Query the right table in information_schema
     SELECT table_name 
     FROM information_schema.tables
     -- Specify the correct table_schema value
     WHERE table_schema = 'public';
+    
+Tables: At the core of every database  
+Redundancy in the university_professors table
+    SELECT * FROM
+    FROM university_professors
+    LIMIT 3;
+
 Now have a look at the columns in university_professors by selecting all entries in information_schema.columns that 
 correspond to that table.
     -- Query the right table in information_schema to get columns
@@ -76,12 +79,8 @@ Finally, print the first five rows of the university_professors table.
 You're now familiar with the pre-existing university_professors table, which holds information on all kinds of entities. 
 You'll migrate data from this table to other tables in the upcoming lessons
 
-
-Redundancy in the university_professors table
-    SELECT * FROM
-    FROM university_professors
-    LIMIT 3;
 Currently: One "entity type" in the database
+A better database model with three entity types
 A better database model with four entity types
 
 
@@ -135,6 +134,8 @@ Alter professors to add the text column university_shortname
 
 
 Update your database as the structure changes
+  The current database model
+  Migrate data
 Only store DISTINCT data in the new tables
     SELECT COUNT(*)
     FROM university_professors;
@@ -142,6 +143,7 @@ Only store DISTINCT data in the new tables
     SELECT COUNT(DISTINCT organization)
     FROM university_professors;
 1287
+#
 INSERT DISTINCT records INTO the new tables
       INSERT INTO organizations
       SELECT DISTINCT organization,
@@ -153,10 +155,11 @@ Output: INSERT 0 1287
           organization_sector
       FROM university_professors;
 Output: INSERT 0 1377
+#
 The INSERT INTO statement
     INSERT INTO table_name (column_a, column_b)
     VALUES ("value_a", "value_b");
-
+#
 RENAME a COLUMN in affiliations
     CREATE TABLE affiliations (
     firstname text,
@@ -167,7 +170,7 @@ RENAME a COLUMN in affiliations
     );
 ALTER TABLE table_name
 RENAME COLUMN old_name TO new_name;
-
+#
 DROP a COLUMN in affiliations
     CREATE TABLE affiliations (
     firstname text,
@@ -178,7 +181,7 @@ DROP a COLUMN in affiliations
     );
 ALTER TABLE table_name
 DROP COLUMN column_name;
-
+#
 A professor is uniquely identified by firstname, lastname only
     SELECT DISTINCT firstname, lastname,
     university_shortname
@@ -213,7 +216,6 @@ lastname| Abou Jaoudé
 (truncated)
 (551 records)
 
-
 RENAME and DROP COLUMNs in affiliations
 As mentioned in the video, the still empty affiliations table has some flaws. In this exercise, you'll correct 
 them as outlined in the video.
@@ -247,7 +249,7 @@ Second part:
 Take this part and append it to the first, so it inserts all distinct rows from table_a into table_b.
 One last thing: It is important that you run all of the code at the same time once you have filled out the blanks.
 Insert all DISTINCT professors from university_professors into professors.
-    Print all the rows in professors.
+Print all the rows in professors.
     INSERT INTO professors 
     SELECT DISTINCT firstname, lastname, university_shortname 
     FROM university_professors;
@@ -365,7 +367,7 @@ The most common types
   date , time and timestamp : various formats for date and time calculations
   numeric : arbitrary precision numbers, e.g. 3.1457
   integer : whole numbers in the range of -2147483648 and +2147483647
-  From the PostgreSQL documentation .
+      From the PostgreSQL documentation .
 Specifying types upon table creation
     CREATE TABLE students (
     ssn integer,
@@ -527,8 +529,9 @@ Give it the name organization_unq.
 Making sure universities.university_shortname and organizations.organization only contain unique values
 is a prerequisite for turning them into so-called primary keys – the subject of the next chapter!
 
-
-
+###
+### Keys and superkeys
+###
 
 
 
