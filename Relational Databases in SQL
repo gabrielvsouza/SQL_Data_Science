@@ -529,10 +529,10 @@ Give it the name organization_unq.
 Making sure universities.university_shortname and organizations.organization only contain unique values
 is a prerequisite for turning them into so-called primary keys – the subject of the next chapter!
 
+
 ###
 ### Keys and superkeys
 ###
-
 What is a key?
     Attribute(s) that identify a record uniquely
     As long as attributes can be removed: superkey
@@ -561,11 +561,10 @@ Then, find out how many unique values there are in the university_city column
 
 Identify keys with SELECT COUNT DISTINCT
 There's a very basic way of finding out what qualifies for a key in an existing, populated table:
-Count the distinct records for all possible combinations of columns. 
-If the resulting number x equals the number of all rows in the table for a combination, you have discovered a superkey.
-Then remove one column after another until you can no longer remove columns without seeing the number x decrease. 
-If that is the case, you have discovered a (candidate) key.
-
+  1. Count the distinct records for all possible combinations of columns. 
+  If the resulting number x equals the number of all rows in the table for a combination, you have discovered a superkey.
+  2. Then remove one column after another until you can no longer remove columns without seeing the number x decrease. 
+  If that is the case, you have discovered a (candidate) key.
 The table professors has 551 rows. It has only one possible candidate key, which is a combination of two attributes. 
 You might want to try different combinations using the "Run code" button. Once you have found the solution, 
 you can submit your answer.
@@ -573,7 +572,8 @@ Using the above steps, identify the candidate key by trying out different combin
     -- Try out different combinations
     SELECT COUNT(DISTINCT(firstname, lastname)) 
     FROM professors;
-Indeed, the only combination that uniquely identifies professors is {firstname, lastname}. {firstname, lastname, university_shortname} is a superkey, and all other combinations give duplicate values. 
+Indeed, the only combination that uniquely identifies professors is {firstname, lastname}. 
+{firstname, lastname, university_shortname} is a superkey, and all other combinations give duplicate values. 
 Hopefully, the concept of superkeys and keys is now a bit more clear. Let's move on to primary keys!
 
 
@@ -742,7 +742,6 @@ Specifying foreign keys
     ALTER TABLE a
     ADD CONSTRAINT a_fkey FOREIGN KEY (b_id) REFERENCES b (id);
 
-
 REFERENCE a table with a FOREIGN KEY
 In your database, you want the professors table to reference the universities table. 
 You can do that by specifying a column in professors table that references a column in the universities table.
@@ -760,7 +759,6 @@ Pay attention to the naming convention employed here: Usually, a foreign key ref
     ADD CONSTRAINT professors_fkey FOREIGN KEY (university_id) REFERENCES universities (id);
 Now, the professors table has a link to the universities table. Each professor belongs to exactly one university.
 
-
 Explore foreign key constraints
 Foreign key constraints help you to keep order in your database mini-world. 
 In your database, for instance, only professors belonging to Swiss universities should be allowed, 
@@ -777,28 +775,298 @@ became a professor – at the University of Zurich (UZH)!
 As you can see, inserting a professor with non-existing university IDs violates the foreign key constraint you've just added. 
 This also makes sure that all universities are spelled equally – adding to data consistency.
 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+Relationa Database
+Schema
+CREATE DATABASE
+CREATE TABLE
+ALTER TABLE
+DROP
+    CREATE DATABASE Social_network;
+
+    CREATE TABLE users (
+      user_id int,
+      first_name VARCHAR(100),
+      last_name VARCHAR(100),
+      email VARCHAR(255)
+    );
+
+    ALTER TABLE users ADD encrypted_password VARCHAR(1000);
+
+    ALTER TABLE users DROP COLUMN email;
+
+    DROP TABLE users;
+
+    DROP DATABASE Social_network;
+
+users
+movies
+purchases
+    INSERT INTO movies (movie_id, title, description, price)
+    VALUES (1, 'Gattaca', 'Movie or documentary?', 4.99);
+    
+    SELECT * FROM movies;SELECT title, price FROM movies;
+    SELECT title FROM movies;
+    SELECT title, price FROM movies;
+    SELECT title, price FROM movies ORDER BY price;
+    SELECT title, price FROM movies ORDER BY price DESC;
+    
+    UPDATE movies SET price = 0.99 WHERE title = 'Jaws';
+    SELECT title, price FROM movies ORDER BY price DESC;
+    
+    DELETE FROM movies WHERE title = 'Stars Wars';
+    SELECT title, price FROM movies ORDER BY price DESC;
+    
+Joins
+Views
 
 
 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+JOIN tables linked by a foreign key
+Let's join these two tables to analyze the data further!
+You might already know how SQL joins work from the Intro to SQL for Data Science course (last exercise) or 
+from Joining Data in PostgreSQL.
+While foreign keys and primary keys are not strictly necessary for join queries, they greatly help by telling
+you what to expect. For instance, you can be sure that records referenced from table A will always be present 
+in table B – so a join from table A will always find something in table B. If not, the foreign key constraint
+would be violated.
+JOIN professors with universities on professors.university_id = universities.id, i.e., retain all records where the foreign key of professors is equal to the primary key of universities.
+Filter for university_city = 'Zurich'.
+    -- Select all professors working for universities in the city of Zurich
+    SELECT professors.lastname, universities.id, universities.university_city
+    FROM professors
+    JOIN universities
+    ON professors.university_id = universities.id
+    WHERE universities.university_city = 'Zurich';
 
 
 
+Model more complex relationships
+How to implement N:M-relationships
+  Create a table
+  Add foreign keys for every connected table
+  Add additional attributes
+    CREATE TABLE affiliations (
+    professor_id integer REFERENCES professors (id),
+    organization_id varchar(256) REFERENCES organization (id),
+    function varchar(256)
+    );
+No primary key!
+Possible PK = {professor_id, organization_id, function}
+
+Add foreign keys to the "affiliations" table
+At the moment, the affiliations table has the structure {firstname, lastname, function, organization}, 
+as you can see in the preview at the bottom right. In the next three exercises, you're going to turn this 
+table into the form {professor_id, organization_id, function}, with professor_id and organization_id being 
+foreign keys that point to the respective tables.
+You're going to transform the affiliations table in-place, i.e., without creating a temporary table to cache 
+your intermediate results.
+1 Add a professor_id column with integer data type to affiliations, and declare it to be a foreign key that 
+references the id column in professors.
+    ALTER TABLE affiliations
+    ADD COLUMN professor_id integer REFERENCES professors (id);
+2 Rename the organization column in affiliations to organization_id
+    ALTER TABLE affiliations
+    RENAME COLUMN organization TO organization_id;
+3 Add a foreign key constraint on organization_id so that it references the id column in organizations
+    ALTER TABLE affiliations
+    ADD CONSTRAINT affiliations_organization_fkey FOREIGN KEY (organization_id) REFERENCES organizations (id);
+Making organization_id a foreign key worked flawlessly because these organizations actually exist in the organizations 
+table. That was only the first part, though. Now it's time to update professor_id in affiliations – so that it 
+correctly refers to the corresponding professors.
 
 
+Populate the "professor_id" column
+Now it's time to also populate professors_id. You'll take the ID directly from professors.
+Here's a way to update columns of a table based on values in another table:
+    UPDATE table_a
+    SET column_to_update = table_b.column_to_update_from
+    FROM table_b
+    WHERE condition1 AND condition2 AND ...;
+This query does the following:
+  1-For each row in table_a, find the corresponding row in table_b where condition1, condition2, etc., are met.
+  2-Set the value of column_to_update to the value of column_to_update_from (from that corresponding row).
+The conditions usually compare other columns of both tables, e.g. table_a.some_column = table_b.some_column. 
+Of course, this query only makes sense if there is only one matching row in table_b.
+1 First, have a look at the current state of affiliations by fetching 10 rows and all columns.
+    SELECT * FROM affiliations LIMIT 10;    
+2 Update the professor_id column with the corresponding value of the id column in professors.
+"Corresponding" means rows in professors where the firstname and lastname are identical to the ones in affiliations
+    -- Update professor_id to professors.id where firstname, lastname correspond to rows in professors
+    UPDATE affiliations
+    SET professor_id = professors.id
+    FROM professors
+    WHERE affiliations.firstname = professors.firstname AND affiliations.lastname = professors.lastname;
+3 Check out the first 10 rows and all columns of affiliations again. Have the professor_ids been correctly matched?
+    SELECT * FROM affiliations LIMIT 10;    
+As you can see, the correct professors.id has been inserted into professor_id for each record, thanks to the matching 
+firstname and lastname in both tables
+
+Drop "firstname" and "lastname"
+The firstname and lastname columns of affiliations were used to establish a link to the professors table in the 
+last exercise – so the appropriate professor IDs could be copied over. This only worked because there is exactly 
+one corresponding professor for each row in affiliations. In other words: {firstname, lastname} is a candidate key 
+of professors – a unique combination of columns.
+It isn't one in affiliations though, because, as said in the video, professors can have more than one affiliation.
+Because professors are referenced by professor_id now, the firstname and lastname columns are no longer needed, 
+so it's time to drop them. After all, one of the goals of a database is to reduce redundancy where possible.
+Drop the firstname and lastname columns from the affiliations table.
+    ALTER TABLE affiliations
+    DROP COLUMN firstname;
+
+    -- Drop the lastname column
+    ALTER TABLE affiliations
+    DROP COLUMN lastname;
+Now the affiliations table that models the N:M-relationship between professors and organizations is finally comple
 
 
+###
+###Referential integrity
+###
+Referential integrity
+  A record referencing another table must refer to an existing record in that table
+  Specified between two tables
+  Enforced through foreign keys
+Referential integrity violations
+  Referential integrity from table A to table B is violated...
+  ...if a record in table B that is referenced from a record in table A is deleted.
+  ...if a record in table A referencing a non-existing record from table B is inserted.
+  Foreign keys prevent violations!
+Dealing with violations
+    CREATE TABLE a (
+    id integer PRIMARY KEY,
+    column_a varchar(64),
+    ...,
+    b_id integer REFERENCES b (id) ON DELETE NO ACTION
+    );
+#
+    CREATE TABLE a (
+    id integer PRIMARY KEY,
+    column_a varchar(64),
+    ...,
+    b_id integer REFERENCES b (id) ON DELETE CASCADE
+    );
+Dealing with violations, contd.
+ON DELETE...
+    ...NO ACTION: Throw an error
+    ...CASCADE: Delete all referencing records
+    ...RESTRICT: Throw an error
+    ...SET NULL: Set the referencing column to NULL
+    ...SET DEFAULT: Set the referencing column to its default value
 
 
+Change the referential integrity behavior of a key
+So far, you implemented three foreign key constraints:
+  1-professors.university_id to universities.id
+  2-affiliations.organization_id to organizations.id
+  3-affiliations.professor_id to professors.id
+These foreign keys currently have the behavior ON DELETE NO ACTION. Here, you're going to change that behavior 
+for the column referencing organizations from affiliations. If an organization is deleted, all its affiliations
+(by any professor) should also be deleted.
+Altering a key constraint doesn't work with ALTER COLUMN. Instead, you have to delete the key constraint and then 
+add a new one with a different ON DELETE behavior.
+For deleting constraints, though, you need to know their name. 
+This information is also stored in information_schema.
+1 Have a look at the existing foreign key constraints by querying table_constraints in information_schema.
+    SELECT constraint_name, table_name, constraint_type
+    FROM information_schema.table_constraints
+    WHERE constraint_type = 'FOREIGN KEY';
+2 Delete the affiliations_organization_id_fkey foreign key constraint in affiliations
+    ALTER TABLE affiliations
+    DROP CONSTRAINT affiliations_organization_id_fkey;
+3 Add a new foreign key that cascades deletion if a referenced record is deleted from organizations. 
+Name it affiliations_organization_id_fkey.
+    ALTER TABLE affiliations
+    ADD CONSTRAINT affiliations_organization_id_fkey FOREIGN KEY (organization_id) 
+    REFERENCES organizations (id) ON DELETE CASCADE;
+4 Run the DELETE and SELECT queries to double check that the deletion cascade actually works.
+    -- Check that no more affiliations with this organization exist
+    SELECT * FROM organizations
+    WHERE id = 'CUREM';
+ As you can see, whenever an organization referenced by an affiliation is deleted, the affiliations also gets deleted. It is your job as database designer to judge whether this is a sensible configuration. 
+ Sometimes, setting values to NULL or to restrict deletion altogether might make more sense!
 
 
+Roundup
+How you've transformed the database
+  Column data types
+  Key constraints
+  Relationships between tables
+The database ecosystem
 
 
+Count affiliations per university
+Now that your data is ready for analysis, let's run some exemplary SQL queries on the database. 
+You'll now use already known concepts such as grouping by columns and joining tables.
+In this exercise, you will find out which university has the most affiliations (through its professors). 
+For that, you need both affiliations and professors tables, as the latter also holds the university_id.
+As a quick repetition, remember that joins have the following structure:
+    SELECT table_a.column1, table_a.column2, table_b.column1, ... 
+    FROM table_a
+    JOIN table_b 
+    ON table_a.column = table_b.column
+This results in a combination of table_a and table_b, but only with rows where table_a.column is equal to table_b.column.
+Count the number of total affiliations by university.
+Sort the result by that count, in descending order.
+    SELECT COUNT(*), professors.university_id 
+    FROM affiliations
+    JOIN professors
+    ON affiliations.professor_id = professors.id
+    GROUP BY professors.university_id 
+    ORDER BY count DESC;
+As you can see, the count of affiliations is completely different from university to university
 
 
-
-
-
-
+Join all the tables together
+In this last exercise, you will find the university city of the professor with the most affiliations 
+in the sector "Media & communication".
+For this, you need to join all the tables, group by a column, and then use selection criteria to get 
+only the rows in the correct sector.
+1Join all tables in the database (starting with affiliations, professors, organizations, and universities) and look at the result.
+    SELECT *
+    FROM affiliations
+    JOIN professors
+    ON affiliations.professor_id = professors.id
+    JOIN organizations
+    ON affiliations.organization_id = organizations.id
+    JOIN universities
+    ON professors.university_id = universities.id;
+2 Now group the result by organization sector, professor, and university city.
+Count the resulting number of rows.
+    SELECT COUNT(*), organizations.organization_sector, 
+    professors.id, universities.university_city
+    FROM affiliations
+    JOIN professors
+    ON affiliations.professor_id = professors.id
+    JOIN organizations
+    ON affiliations.organization_id = organizations.id
+    JOIN universities
+    ON professors.university_id = universities.id
+    GROUP BY organizations.organization_sector, 
+    professors.id, universities.university_city;
+3 Only retain rows with "Media & communication" as organization sector, and sort the table by count, 
+in descending order.
+    SELECT COUNT(*), organizations.organization_sector, 
+    professors.id, universities.university_city
+    FROM affiliations
+    JOIN professors
+    ON affiliations.professor_id = professors.id
+    JOIN organizations
+    ON affiliations.organization_id = organizations.id
+    JOIN universities
+    ON professors.university_id = universities.id
+    WHERE organizations.organization_sector = 'Media & communication'
+    GROUP BY organizations.organization_sector, 
+    professors.id, universities.university_city
+    ORDER BY count DESC;
+The professor with id 538 has the most affiliations in the "Media & communication" sector, 
+and he or she lives in the city of Lausanne. Thanks to your database design, you can be sure 
+that the data you've just queried is consistent. Of course, you could also put university_city 
+and organization_sector in their own tables, making the data model even more formal. 
+However, in database design, you have to strike a balance between modeling overhead, 
+desired data consistency, and usability for queries like the one you've just wrote. 
 
 
 
