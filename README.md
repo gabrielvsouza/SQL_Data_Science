@@ -1,4 +1,4 @@
-# SQL_for_Data_Science
+# SQL_Data_Science
 
 Welcome to SQL for Data Science Class:
 SQL is a standard language for storing, manipulating and retrieving data in databases.
